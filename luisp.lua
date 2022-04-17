@@ -22,13 +22,13 @@ local luispFunctions = {
 	{
 		name = "print",
 		callback = function(args)
-			if args[1].type == "atom" then
+			if args.value[1].type == "atom" then
 				-- print("Printing atom: " .. args[1].value)
-				print(args[1].value)
+				print(args.value[1].value)
 			else
 				-- print("Printing list:")
 				-- printTab(args[1])
-				print(luispModule.exec(args[1]).value)
+				print(luispModule.exec(args.value[1]).value)
 			end
 		end
 	},
@@ -39,7 +39,8 @@ local luispFunctions = {
 			-- printTab(args)
 			local sum = 0
 			for k, v in pairs(args.value) do
-				-- print("Summing " .. v.value)
+				-- print("Summing")
+				-- printTab(v)
 				if v.type == "atom" then
 					sum = sum + v.value
 				else
@@ -47,6 +48,29 @@ local luispFunctions = {
 				end
 			end
 			return { type = "atom", value = sum }
+		end
+	},
+	{
+		name = "-",
+		callback = function(args)
+			-- print("Subtracting")
+			local sub = 0
+			for k, v in pairs(args.value) do
+				if k == 1 then
+					if v.type == "atom" then
+						sub = v.value
+					else
+						sub = luispModule.exec(v).value
+					end
+				else
+					if v.type == "atom" then
+						sub = sub - v.value
+					else
+						sub = sub - luispModule.exec(v).value
+					end
+				end
+			end
+			return { type = "atom", value = sub }
 		end
 	},
 }
@@ -95,6 +119,7 @@ function luispModule.parse(code)
 					table.insert(currentList.value, { type = "list", value = {} })
 				end
 				parserState.indentLvl = parserState.indentLvl + 1
+				parserState.stringBuf = ""
 				print("Entering list")
 			elseif c == ")" then
 				--Leaving list
@@ -158,7 +183,10 @@ function luispModule.exec(parsedCode)
 					end
 				end
 				if func then
-					local args = table.pack(table.unpack(v.value, 2))
+					local args = { type = "list", value = {} }
+					for i = 1, ((#v.value) - 1) do
+						table.insert(args.value, v.value[i + 1])
+					end
 					returnVal = func.callback(args)
 				end
 			end
@@ -166,7 +194,7 @@ function luispModule.exec(parsedCode)
 	else
 		--This is list of atoms
 		local func = nil
-		for k, v in pairs(luispFunctions) do
+		for k, v in ipairs(luispFunctions) do
 			if v.name == parsedCode.value[1].value then
 				func = v
 				break
