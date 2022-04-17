@@ -23,6 +23,7 @@ end
 local code = [[
 (print "Hello world!")
 (print (+ 2 3))
+(print (+ 1 2 3 4 (+ 10 20)))
 ]]
 
 local parsedCode = luisp.parse(code)

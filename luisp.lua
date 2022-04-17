@@ -21,7 +21,6 @@ end
 local luispFunctions = {
 	{
 		name = "print",
-		argsTypes = { "atom" },
 		callback = function(args)
 			if args[1].type == "atom" then
 				-- print("Printing atom: " .. args[1].value)
@@ -41,7 +40,11 @@ local luispFunctions = {
 			local sum = 0
 			for k, v in pairs(args.value) do
 				-- print("Summing " .. v.value)
-				sum = sum + v.value
+				if v.type == "atom" then
+					sum = sum + v.value
+				else
+					sum = sum + luispModule.exec(v).value
+				end
 			end
 			return { type = "atom", value = sum }
 		end
