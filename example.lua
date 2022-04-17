@@ -1,5 +1,8 @@
 local luisp = require("luisp")
 
+luisp.debugModeOff()
+luisp.registerCoreFunctions()
+
 local function printTab(tab, depth)
 	if depth == nil then depth = 0 end
 
@@ -30,7 +33,10 @@ local code = [[
 
 local parsedCode = luisp.parse(code)
 
-printTab(parsedCode)
+-- printTab(parsedCode)
 
-print("\nExecuting: ")
-luisp.exec(parsedCode)
+-- print("\nExecuting: ")
+local result, err, errDetail = luisp.exec(parsedCode)
+if err then
+	print("Error: ", err, errDetail)
+end

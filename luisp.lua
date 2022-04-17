@@ -1,5 +1,7 @@
 local luispModule = {}
 
+local debugMode = false
+
 local function printTab(tab, depth)
 	if depth == nil then depth = 0 end
 
@@ -18,7 +20,7 @@ local function printTab(tab, depth)
 	end
 end
 
-local luispFunctions = {
+local luispCoreFunctions = {
 	{
 		name = "print",
 		callback = function(args)
@@ -75,9 +77,13 @@ local luispFunctions = {
 	},
 }
 
+local luispFunctions = {}
+
 function luispModule.parse(code)
-	print("Parsing...")
-	print(code)
+	if debugMode then
+		print("Parsing...")
+		print(code)
+	end
 
 	local parsedCode = { type = "list", value = {} }
 	local parserState = {
@@ -97,7 +103,7 @@ function luispModule.parse(code)
 					currentList = currentList.value[#currentList.value]
 				end
 				table.insert(currentList.value, { type = "atom", value = parserState.stringBuf })
-				print("Leaving string atom: \"" .. parserState.stringBuf .. "\"")
+				if debugMode then print("Leaving string atom: \"" .. parserState.stringBuf .. "\"") end
 				parserState.stringBuf = ""
 			else
 				parserState.stringBuf = parserState.stringBuf .. c
@@ -120,7 +126,7 @@ function luispModule.parse(code)
 				end
 				parserState.indentLvl = parserState.indentLvl + 1
 				parserState.stringBuf = ""
-				print("Entering list")
+				if debugMode then print("Entering list") end
 			elseif c == ")" then
 				--Leaving list
 				if parserState.stringBuf ~= "" then
@@ -133,16 +139,16 @@ function luispModule.parse(code)
 						-- end
 					end
 					table.insert(currentList.value, { type = "atom", value = parserState.stringBuf })
-					print("Leaving atom: \"" .. parserState.stringBuf .. "\"")
+					if debugMode then print("Leaving atom: \"" .. parserState.stringBuf .. "\"") end
 					parserState.stringBuf = ""
 				end
 				parserState.indentLvl = parserState.indentLvl - 1
-				print("Leaving list")
+				if debugMode then print("Leaving list") end
 			elseif c == "\"" or c == "\'" then
 				--Entering string atom
 				parserState.inString = true
 				parserState.stringBuf = ""
-				print("Entering string atom")
+				if debugMode then print("Entering string atom") end
 			elseif c == " " and parserState.stringBuf ~= "" then
 				--Leaving atom
 				local currentList = parsedCode
@@ -154,7 +160,7 @@ function luispModule.parse(code)
 					-- end
 				end
 				table.insert(currentList.value, { type = "atom", value = parserState.stringBuf })
-				print("Leaving atom: \"" .. parserState.stringBuf .. "\"")
+				if debugMode then print("Leaving atom: \"" .. parserState.stringBuf .. "\"") end
 				parserState.stringBuf = ""
 			elseif c == "\n" or c == "\t" then
 				--White character
@@ -188,6 +194,8 @@ function luispModule.exec(parsedCode)
 						table.insert(args.value, v.value[i + 1])
 					end
 					returnVal = func.callback(args)
+				else
+					return nil, "FunctionNotDefinedError", "Function \"" .. v.value[1].value .. "\" not found!"
 				end
 			end
 		end
@@ -208,6 +216,8 @@ function luispModule.exec(parsedCode)
 			-- print("Args:")
 			-- printTab(args)
 			returnVal = func.callback(args)
+		else
+			return nil, "FunctionNotDefinedError", "Function \"" .. parsedCode.value[1].value .. "\" not found!"
 		end
 	end
 
@@ -240,6 +250,20 @@ function luispModule.exec(parsedCode)
 	-- end
 
 	return returnVal
+end
+
+function luispModule.debugModeOn()
+	debugMode = true
+end
+
+function luispModule.debugModeOff()
+	debugMode = false
+end
+
+function luispModule.registerCoreFunctions()
+	for k, v in pairs(luispCoreFunctions) do
+		table.insert(luispFunctions, v)
+	end
 end
 
 return luispModule
