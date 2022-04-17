@@ -21,7 +21,14 @@ local function printTab(tab, depth)
 	end
 end
 
--- printTab({ "a", b = { 1, 2, 3 }, c = "some", d = { "one", "two", three = { 9, 10, 11 } } })
+luisp.registerFunctions({
+	{
+		name = "myfunc",
+		callback = function(args)
+			return { type = "atom", value = "Hello from my own function!" }
+		end
+	}
+})
 
 local code = [[
 (print "Hello world!")
@@ -29,6 +36,7 @@ local code = [[
 (print (+ 1 2 3 4 (+ 10 20)))
 (print (- 10 7))
 (print (+ (- 11 2) (- 23 12)))
+(print (myfunc))
 ]]
 
 local parsedCode = luisp.parse(code)

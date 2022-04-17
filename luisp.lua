@@ -266,4 +266,14 @@ function luispModule.registerCoreFunctions()
 	end
 end
 
+function luispModule.registerFunction(func)
+	table.insert(luispFunctions, func)
+end
+
+function luispModule.registerFunctions(funcs)
+	for k, v in pairs(funcs) do
+		table.insert(luispFunctions, v)
+	end
+end
+
 return luispModule
