@@ -4,7 +4,7 @@ function luispModule.parse(code)
 	print("Parsing...")
 	print(code)
 
-	local parsedCode = {}
+	local parsedCode = { type = "list", value = {} }
 	local parserState = {
 		indentLvl = 0,
 		inString = false,
@@ -18,7 +18,8 @@ function luispModule.parse(code)
 				parserState.inString = false
 				local currentList = parsedCode
 				for i = 1, parserState.indentLvl do
-					currentList = currentList[#currentList]
+					-- currentList = currentList[#currentList]
+					currentList = currentList.value[#currentList.value]
 				end
 				table.insert(currentList.value, { type = "atom", value = parserState.stringBuf })
 				print("Leaving string atom: \"" .. parserState.stringBuf .. "\"")
@@ -30,15 +31,15 @@ function luispModule.parse(code)
 			if c == "(" then
 				--Entering list
 				if parserState.indentLvl == 0 then
-					table.insert(parsedCode, { type = "list", value = {} })
+					table.insert(parsedCode.value, { type = "list", value = {} })
 				else
 					local currentList = parsedCode
 					for i = 1, parserState.indentLvl do
-						if i == 1 then
-							currentList = currentList[#currentList]
-						else
-							currentList = currentList.value[#currentList.value]
-						end
+						-- if i == 1 then
+						-- 	currentList = currentList[#currentList]
+						-- else
+						currentList = currentList.value[#currentList.value]
+						-- end
 					end
 					table.insert(currentList.value, { type = "list", value = {} })
 				end
@@ -49,11 +50,11 @@ function luispModule.parse(code)
 				if parserState.stringBuf ~= "" then
 					local currentList = parsedCode
 					for i = 1, parserState.indentLvl do
-						if i == 1 then
-							currentList = currentList[#currentList]
-						else
-							currentList = currentList.value[#currentList.value]
-						end
+						-- if i == 1 then
+						-- 	currentList = currentList[#currentList]
+						-- else
+						currentList = currentList.value[#currentList.value]
+						-- end
 					end
 					table.insert(currentList.value, { type = "atom", value = parserState.stringBuf })
 					print("Leaving atom: \"" .. parserState.stringBuf .. "\"")
@@ -70,11 +71,11 @@ function luispModule.parse(code)
 				--Leaving atom
 				local currentList = parsedCode
 				for i = 1, parserState.indentLvl do
-					if i == 1 then
-						currentList = currentList[#currentList]
-					else
-						currentList = currentList.value[#currentList.value]
-					end
+					-- if i == 1 then
+					-- 	currentList = currentList[#currentList]
+					-- else
+					currentList = currentList.value[#currentList.value]
+					-- end
 				end
 				table.insert(currentList.value, { type = "atom", value = parserState.stringBuf })
 				print("Leaving atom: \"" .. parserState.stringBuf .. "\"")
