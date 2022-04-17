@@ -28,3 +28,6 @@ local code = [[
 local parsedCode = luisp.parse(code)
 
 printTab(parsedCode)
+
+print("\nExecuting: ")
+luisp.exec(parsedCode)

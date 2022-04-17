@@ -1,5 +1,53 @@
 local luispModule = {}
 
+local function printTab(tab, depth)
+	if depth == nil then depth = 0 end
+
+	if type(tab) == "table" then
+		-- for i = 1, depth do io.write("  ") end
+		print("{")
+		for k, v in pairs(tab) do
+			for i = 1, (depth + 1) do io.write("  ") end
+			io.write(k .. " = ")
+			printTab(v, depth + 1)
+		end
+		for i = 1, depth do io.write("  ") end
+		print("}")
+	else
+		print(tab)
+	end
+end
+
+local luispFunctions = {
+	{
+		name = "print",
+		argsTypes = { "atom" },
+		callback = function(args)
+			if args[1].type == "atom" then
+				-- print("Printing atom: " .. args[1].value)
+				print(args[1].value)
+			else
+				-- print("Printing list:")
+				-- printTab(args[1])
+				print(luispModule.exec(args[1]).value)
+			end
+		end
+	},
+	{
+		name = "+",
+		callback = function(args)
+			-- print("Summing args: ")
+			-- printTab(args)
+			local sum = 0
+			for k, v in pairs(args.value) do
+				-- print("Summing " .. v.value)
+				sum = sum + v.value
+			end
+			return { type = "atom", value = sum }
+		end
+	},
+}
+
 function luispModule.parse(code)
 	print("Parsing...")
 	print(code)
@@ -90,6 +138,77 @@ function luispModule.parse(code)
 	end
 
 	return parsedCode
+end
+
+function luispModule.exec(parsedCode)
+	local returnVal = nil
+
+	if parsedCode.value[1].type == "list" then
+		--This is list of lists
+		for k, v in ipairs(parsedCode.value) do
+			if v.type == "list" then
+				local func = nil
+				for k2, v2 in pairs(luispFunctions) do
+					if v2.name == v.value[1].value then
+						func = v2
+						break
+					end
+				end
+				if func then
+					local args = table.pack(table.unpack(v.value, 2))
+					returnVal = func.callback(args)
+				end
+			end
+		end
+	else
+		--This is list of atoms
+		local func = nil
+		for k, v in pairs(luispFunctions) do
+			if v.name == parsedCode.value[1].value then
+				func = v
+				break
+			end
+		end
+		if func then
+			local args = { type = "list", value = {} }
+			for i = 1, ((#parsedCode.value) - 1) do
+				table.insert(args.value, parsedCode.value[i + 1])
+			end
+			-- print("Args:")
+			-- printTab(args)
+			returnVal = func.callback(args)
+		end
+	end
+
+	-- for k, v in ipairs(parsedCode.value) do
+	-- 	if v.type == "list" then
+	-- 		local func = nil
+	-- 		for k2, v2 in pairs(luispFunctions) do
+	-- 			if v2.name == v.value[1].value then
+	-- 				func = v2
+	-- 				break
+	-- 			end
+	-- 		end
+	-- 		if func then
+	-- 			local args = table.pack(table.unpack(v.value, 2))
+	-- 			returnVal = func.callback(args)
+	-- 		end
+	-- 	else
+	-- 		local func = nil
+	-- 		for k2, v2 in pairs(luispFunctions) do
+	-- 			if v2.name == v.value then
+	-- 				func = v2
+	-- 				break
+	-- 			end
+	-- 		end
+	-- 		if func then
+	-- 			local args = table.pack(table.unpack(v.value, 2))
+	-- 			returnVal = func.callback(args)
+	-- 		end
+	-- 	end
+	-- end
+
+	return returnVal
 end
 
 return luispModule
