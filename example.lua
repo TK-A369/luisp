@@ -1,6 +1,6 @@
 local luisp = require("luisp")
 
-luisp.debugModeOn()
+luisp.debugModeOff()
 luisp.printErrorsOn()
 luisp.registerCoreFunctions()
 
@@ -38,12 +38,18 @@ local code = [[
 (print (- 10 7))
 (print (+ (- 11 2) (- 23 12)))
 (print (myfunc))
-(print (lista 2 3))
+(print (list 2 3))
+(set myvar1 7.5)
+(set myvar2 (+ 2 3))
+(set myvar3 (+ (myvar1) (myvar2)))
+(print (myvar1))
+(print (myvar2))
+(print (myvar3))
 ]]
 
 local parsedCode = luisp.parse(code)
 
-printTab(parsedCode)
+-- printTab(parsedCode)
 
 -- print("\nExecuting: ")
 local result, err, errDetail = luisp.exec(parsedCode)
