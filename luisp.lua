@@ -1,6 +1,7 @@
 local luispModule = {}
 
 local debugMode = false
+local printErrors = false
 
 local function printTab(tab, depth)
 	if depth == nil then depth = 0 end
@@ -27,11 +28,37 @@ local luispCoreFunctions = {
 			if args.value[1].type == "atom" then
 				-- print("Printing atom: " .. args[1].value)
 				print(args.value[1].value)
-			else
+			elseif args.value[1].type == "quotelist" then
+				for k, v in ipairs(args.value[1].value) do
+					local res, err, errDetail = luispModule.exec({ type = "list", value = { { type = "atom", value = "print" }, v } })
+					if err then
+						if printErrors then
+							print("Error: ", err, errDetail)
+						end
+						return nil, err, errDetail
+					end
+				end
+			elseif args.value[1].type == "list" then
 				-- print("Printing list:")
 				-- printTab(args[1])
-				print(luispModule.exec(args.value[1]).value)
+				local res, err, errDetail = luispModule.exec(args.value[1])
+				if err then
+					if printErrors then
+						print("Error: ", err, errDetail)
+					end
+					return nil, err, errDetail
+				else
+					-- print(res.value)
+					res, err, errDetail = luispModule.exec({ type = "list", value = { { type = "atom", value = "print" }, res } })
+					if err then
+						if printErrors then
+							print("Error: ", err, errDetail)
+						end
+						return nil, err, errDetail
+					end
+				end
 			end
+			return nil
 		end
 	},
 	{
@@ -61,18 +88,41 @@ local luispCoreFunctions = {
 				if k == 1 then
 					if v.type == "atom" then
 						sub = v.value
-					else
+					elseif v.type == "list" then
 						sub = luispModule.exec(v).value
 					end
 				else
 					if v.type == "atom" then
 						sub = sub - v.value
-					else
+					elseif v.type == "list" then
 						sub = sub - luispModule.exec(v).value
 					end
 				end
 			end
 			return { type = "atom", value = sub }
+		end
+	},
+	{
+		name = "list",
+		callback = function(args)
+			-- print("Subtracting")
+			local result = { type = "quotelist", value = {} }
+			for k, v in pairs(args.value) do
+				if v.type == "atom" then
+					table.insert(result.value, v)
+				elseif v.type == "list" then
+					local res, err, errDetail = luispModule.exec(v)
+					if err then
+						if printErrors then
+							print("Error: ", err, errDetail)
+						end
+						return nil, err, errDetail
+					else
+						print(res.value)
+					end
+				end
+			end
+			return result
 		end
 	},
 }
@@ -89,12 +139,13 @@ function luispModule.parse(code)
 	local parserState = {
 		indentLvl = 0,
 		inString = false,
-		stringBuf = ""
+		stringBuf = "",
+		lastChar = ""
 	}
 
 	for c in code:gmatch(".") do
 		if parserState.inString then
-			if c == "\"" or c == "\'" then
+			if c == "\"" then
 				--Leaving string atom
 				parserState.inString = false
 				local currentList = parsedCode
@@ -111,8 +162,10 @@ function luispModule.parse(code)
 		else
 			if c == "(" then
 				--Entering list
+				local listtype = "list"
+				if parserState.lastChar == "\'" then listtype = "quotelist" end
 				if parserState.indentLvl == 0 then
-					table.insert(parsedCode.value, { type = "list", value = {} })
+					table.insert(parsedCode.value, { type = listtype, value = {} })
 				else
 					local currentList = parsedCode
 					for i = 1, parserState.indentLvl do
@@ -122,7 +175,7 @@ function luispModule.parse(code)
 						currentList = currentList.value[#currentList.value]
 						-- end
 					end
-					table.insert(currentList.value, { type = "list", value = {} })
+					table.insert(currentList.value, { type = listtype, value = {} })
 				end
 				parserState.indentLvl = parserState.indentLvl + 1
 				parserState.stringBuf = ""
@@ -144,7 +197,7 @@ function luispModule.parse(code)
 				end
 				parserState.indentLvl = parserState.indentLvl - 1
 				if debugMode then print("Leaving list") end
-			elseif c == "\"" or c == "\'" then
+			elseif c == "\"" then
 				--Entering string atom
 				parserState.inString = true
 				parserState.stringBuf = ""
@@ -164,11 +217,14 @@ function luispModule.parse(code)
 				parserState.stringBuf = ""
 			elseif c == "\n" or c == "\t" then
 				--White character
+			elseif c == "\'" then
+				--Quote sign
 			else
 				--Atom content
 				parserState.stringBuf = parserState.stringBuf .. c
 			end
 		end
+		parserState.lastChar = c
 	end
 
 	return parsedCode
@@ -193,8 +249,15 @@ function luispModule.exec(parsedCode)
 					for i = 1, ((#v.value) - 1) do
 						table.insert(args.value, v.value[i + 1])
 					end
-					returnVal = func.callback(args)
+					local _returnVal, err, errDetail = func.callback(args)
+					returnVal = _returnVal
+					if err then
+						print("Error:", err, errDetail)
+					end
 				else
+					if printErrors then
+						print("Error:", "FunctionNotDefinedError", "Function \"" .. v.value[1].value .. "\" not found!")
+					end
 					return nil, "FunctionNotDefinedError", "Function \"" .. v.value[1].value .. "\" not found!"
 				end
 			end
@@ -217,37 +280,12 @@ function luispModule.exec(parsedCode)
 			-- printTab(args)
 			returnVal = func.callback(args)
 		else
-			return nil, "FunctionNotDefinedError", "Function \"" .. parsedCode.value[1].value .. "\" not found!"
+			if printErrors then
+				print("Error:", "FunctionNotDefinedError", "Function \"" .. tostring(parsedCode.value[1].value) .. "\" not found!")
+			end
+			return nil, "FunctionNotDefinedError", "Function \"" .. tostring(parsedCode.value[1].value) .. "\" not found!"
 		end
 	end
-
-	-- for k, v in ipairs(parsedCode.value) do
-	-- 	if v.type == "list" then
-	-- 		local func = nil
-	-- 		for k2, v2 in pairs(luispFunctions) do
-	-- 			if v2.name == v.value[1].value then
-	-- 				func = v2
-	-- 				break
-	-- 			end
-	-- 		end
-	-- 		if func then
-	-- 			local args = table.pack(table.unpack(v.value, 2))
-	-- 			returnVal = func.callback(args)
-	-- 		end
-	-- 	else
-	-- 		local func = nil
-	-- 		for k2, v2 in pairs(luispFunctions) do
-	-- 			if v2.name == v.value then
-	-- 				func = v2
-	-- 				break
-	-- 			end
-	-- 		end
-	-- 		if func then
-	-- 			local args = table.pack(table.unpack(v.value, 2))
-	-- 			returnVal = func.callback(args)
-	-- 		end
-	-- 	end
-	-- end
 
 	return returnVal
 end
@@ -258,6 +296,14 @@ end
 
 function luispModule.debugModeOff()
 	debugMode = false
+end
+
+function luispModule.printErrorsOn()
+	printErrors = true
+end
+
+function luispModule.printErrorsOff()
+	printErrors = false
 end
 
 function luispModule.registerCoreFunctions()
