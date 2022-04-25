@@ -31,9 +31,10 @@ luisp.registerFunctions({
 	}
 })
 
-local code = [[
+local code1 = [[
 (print "Hello world!")
 (print (+ 2 3))
+(print (+ 1 2 3 4))
 (print (+ 1 2 3 4 (+ 10 20)))
 (print (- 10 7))
 (print (+ (- 11 2) (- 23 12)))
@@ -47,12 +48,31 @@ local code = [[
 (print (myvar3))
 ]]
 
-local parsedCode = luisp.parse(code)
+local code2 = [[
+(set myvar1 '(1 2 3))
+(print (myvar1))
+]]
+
+local code3 = [[
+(set myvar1 7.5)
+(set myvar2 (+ 2 3))
+(set myvar3 (+ (myvar1) (myvar2)))
+(print (myvar1))
+(print (myvar2))
+(print (myvar3))
+]]
+
+local code4 = [[
+(print (+ 1 2 3))
+(print (+ (+ 1 2) (+ 3 4)))
+]]
+
+local parsedCode = luisp.parse(code1)
 
 -- printTab(parsedCode)
 
 -- print("\nExecuting: ")
 local result, err, errDetail = luisp.exec(parsedCode)
 if err then
-	print("Error: ", err, errDetail)
+	print("User error: ", err, errDetail)
 end

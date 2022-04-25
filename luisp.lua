@@ -24,31 +24,77 @@ local function printTab(tab, depth)
 end
 
 --http://lua-users.org/wiki/CopyTable
-local function deepcopy(orig, copies)
-	copies = copies or {}
+-- local function deepcopy(orig, copies)
+-- 	copies = copies or {}
+-- 	local orig_type = type(orig)
+-- 	local copy
+-- 	if orig_type == 'table' then
+-- 		if copies[orig] then
+-- 			copy = copies[orig]
+-- 		else
+-- 			copy = {}
+-- 			copies[orig] = copy
+-- 			for orig_key, orig_value in next, orig, nil do
+-- 				copy[deepcopy(orig_key, copies)] = deepcopy(orig_value, copies)
+-- 			end
+-- 			setmetatable(copy, deepcopy(getmetatable(orig), copies))
+-- 		end
+-- 	else -- number, string, boolean, etc
+-- 		copy = orig
+-- 	end
+-- 	return copy
+-- end
+local function deepcopy(orig)
 	local orig_type = type(orig)
 	local copy
 	if orig_type == 'table' then
-		if copies[orig] then
-			copy = copies[orig]
-		else
-			copy = {}
-			copies[orig] = copy
-			for orig_key, orig_value in next, orig, nil do
-				copy[deepcopy(orig_key, copies)] = deepcopy(orig_value, copies)
-			end
-			setmetatable(copy, deepcopy(getmetatable(orig), copies))
+		copy = {}
+		for orig_key, orig_value in next, orig, nil do
+			copy[deepcopy(orig_key)] = deepcopy(orig_value)
 		end
+		setmetatable(copy, deepcopy(getmetatable(orig)))
 	else -- number, string, boolean, etc
 		copy = orig
 	end
 	return copy
 end
 
+local function evalArgs(args, ret)
+	local result = { type = "list", value = {} }
+	for k, v in pairs(args.value) do
+		if v.type == "list" then
+			local res, err, errDetail = luispModule.exec(v, true)
+			if err then
+				return nil, err, errDetail
+			end
+			result.value[k] = res
+		else
+			result.value[k] = v
+		end
+	end
+	if ret then
+		return result
+	else
+		args = result
+	end
+end
+
 local luispCoreFunctions = {
 	{
 		name = "print",
 		callback = function(args)
+			if debugMode then
+				print("Print args:")
+				printTab(args)
+			end
+			if #(args.value) ~= 1 then
+				return nil, "ArgsError", "Function print must have exactly 1 argument"
+			end
+			args = evalArgs(args, true)
+			if debugMode then
+				print("Print args (after eval):")
+				printTab(args)
+			end
 			if args.value[1].type == "atom" then
 				-- print("Printing atom: " .. args[1].value)
 				print(args.value[1].value)
@@ -59,28 +105,33 @@ local luispCoreFunctions = {
 						-- if printErrors then
 						-- 	print("Error: ", err, errDetail)
 						-- end
-						return nil, err, errDetail
+						return nil, "" .. err, errDetail
 					end
 				end
-			elseif args.value[1].type == "list" then
-				-- print("Printing list:")
-				-- printTab(args[1])
-				local res, err, errDetail = luispModule.exec(args.value[1], true)
-				if err then
-					-- if printErrors then
-					-- 	print("Error: ", err, errDetail)
-					-- end
-					return nil, err, errDetail
-				else
-					-- print(res.value)
-					res, err, errDetail = luispModule.exec({ type = "list", value = { { type = "atom", value = "print" }, res } }, true)
-					if err then
-						-- if printErrors then
-						-- 	print("Error: ", err, errDetail)
-						-- end
-						return nil, err, errDetail
-					end
-				end
+				-- elseif args.value[1].type == "list" then
+				-- 	if debugMode then
+				-- 		print("Printing list:")
+				-- 		printTab(args.value[1])
+				-- 	end
+				-- 	local res, err, errDetail = luispModule.exec(args.value[1], true)
+				-- 	if err then
+				-- 		-- if printErrors then
+				-- 		-- 	print("Error: ", err, errDetail)
+				-- 		-- end
+				-- 		return nil, "" .. err, errDetail
+				-- 	else
+				-- 		if debugMode then
+				-- 			print("Res:")
+				-- 			printTab(res)
+				-- 		end
+				-- 		_, err, errDetail = luispModule.exec({ type = "list", value = { { type = "atom", value = "print" }, res } }, true)
+				-- 		if err then
+				-- 			-- if printErrors then
+				-- 			-- 	print("Error: ", err, errDetail)
+				-- 			-- end
+				-- 			return nil, "" .. err, errDetail
+				-- 		end
+				-- 	end
 			end
 			return nil
 		end
@@ -88,17 +139,50 @@ local luispCoreFunctions = {
 	{
 		name = "+",
 		callback = function(args)
-			-- print("Summing args: ")
-			-- printTab(args)
+			if debugMode then
+				print("Summing args: ")
+				printTab(args)
+			end
+			args = evalArgs(args, true)
+			if debugMode then
+				print("Summing args (after eval): ")
+				printTab(args)
+			end
 			local sum = 0
 			for k, v in pairs(args.value) do
-				-- print("Summing")
-				-- printTab(v)
-				if v.type == "atom" then
-					sum = sum + v.value
-				else
-					sum = sum + luispModule.exec(v, true).value
+				if debugMode then
+					print("Summing")
+					printTab(v)
+					print("Type: " .. v.type)
 				end
+				if v.type == "atom" then
+					if tonumber(v.value) == nil then
+						return nil, "TypeError", "All arguments in + function should be number atoms or (callable) lists that return number atom"
+					else
+						sum = sum + v.value
+					end
+				elseif v.type == "list" then
+					local res, err, errDetail = luispModule.exec(v, true)
+					if err then
+						return nil, "" .. err, errDetail
+					else
+						if res.type == "atom" then
+							if tonumber(res.value) == nil then
+								return nil, "TypeError", "All arguments in + function should be number atoms or (callable) lists that return number atom"
+							else
+								sum = sum + res.value
+							end
+						else
+							return nil, "TypeError", "All arguments in + function should be number atoms or (callable) lists that return number atom"
+						end
+					end
+				else
+					print("Stack: " .. debug.traceback())
+					return nil, "TypeError", "All arguments in + function should be atoms or (callable) lists that return atom"
+				end
+			end
+			if debugMode then
+				print("Summing result: " .. sum)
 			end
 			return { type = "atom", value = sum }
 		end
@@ -113,13 +197,35 @@ local luispCoreFunctions = {
 					if v.type == "atom" then
 						sub = v.value
 					elseif v.type == "list" then
-						sub = luispModule.exec(v, true).value
+						local res, err, errDetail = luispModule.exec(v, true)
+						if err then
+							return nil, "" .. err, errDetail
+						else
+							if res.type == "atom" then
+								sub = res.value
+							else
+								return nil, "TypeError", "All arguments in + function should be atoms or (callable) lists that return atom"
+							end
+						end
+					else
+						return nil, "TypeError", "All arguments in + function should be atoms or (callable) lists that return atom"
 					end
 				else
 					if v.type == "atom" then
 						sub = sub - v.value
 					elseif v.type == "list" then
-						sub = sub - luispModule.exec(v, true).value
+						local res, err, errDetail = luispModule.exec(v, true)
+						if err then
+							return nil, err, errDetail
+						else
+							if res.type == "atom" then
+								sub = sub - res.value
+							else
+								return nil, "TypeError", "All arguments in + function should be atoms or (callable) lists that return atom"
+							end
+						end
+					else
+						return nil, "TypeError", "All arguments in + function should be atoms or (callable) lists that return atom"
 					end
 				end
 			end
@@ -139,9 +245,9 @@ local luispCoreFunctions = {
 						-- if printErrors then
 						-- 	print("Error: ", err, errDetail)
 						-- end
-						return nil, err, errDetail
+						return nil, "" .. err, errDetail
 					else
-						print(res.value)
+						table.insert(result.value, res)
 					end
 				end
 			end
@@ -155,7 +261,7 @@ local luispCoreFunctions = {
 				if args.value[2].type == "list" then
 					local res, err, errDetail = luispModule.exec(args.value[2], true)
 					if err then
-						return nil, err, errDetail
+						return nil, "" .. err, errDetail
 					else
 						luispVariables[args.value[1].value] = res
 					end
@@ -166,8 +272,11 @@ local luispCoreFunctions = {
 			else
 				return nil, "TypeError", "Argument 1 should be atom"
 			end
-			print("Variable after setting:")
-			printTab(luispVariables[args.value[1].value])
+
+			if debugMode then
+				print("Variable \"" .. args.value[1].value .. "\" after setting:")
+				printTab(luispVariables[args.value[1].value])
+			end
 		end
 	},
 }
@@ -293,13 +402,24 @@ function luispModule.exec(parsedCode, child)
 				end
 				if varFunc then
 					local args = { type = "list", value = {} }
-					for i = 1, ((#v.value) - 1) do
+					for i = 1, ((#(v.value)) - 1) do
 						table.insert(args.value, v.value[i + 1])
+					end
+					if debugMode then
+						print("Call args:")
+						printTab(args)
 					end
 					local _returnVal, err, errDetail = varFunc.callback(args)
 					returnVal = _returnVal
-					if err and not child then
-						print("Error:", err, errDetail)
+					if err then
+						if not child then
+							print("Error:", err, errDetail)
+							if debugMode then
+								print("Instruction number: " .. k)
+								print("Stack: " .. debug.traceback())
+							end
+						end
+						return nil, err, errDetail
 					end
 				else
 					if luispVariables[v.value[1].value] then
@@ -307,6 +427,9 @@ function luispModule.exec(parsedCode, child)
 					else
 						if printErrors and not child then
 							print("Error:", "VariableFunctionNotDefinedError", "Variable nor function \"" .. tostring(v.value[1].value) .. "\" not found!")
+							if debugMode then
+								print("Stack: " .. debug.traceback())
+							end
 						end
 						return nil, "VariableFunctionNotDefinedError", "Variable nor function \"" .. tostring(v.value[1].value) .. "\" not found!"
 					end
@@ -324,18 +447,33 @@ function luispModule.exec(parsedCode, child)
 		end
 		if varFunc then
 			local args = { type = "list", value = {} }
-			for i = 1, ((#parsedCode.value) - 1) do
+			for i = 1, ((#(parsedCode.value)) - 1) do
 				table.insert(args.value, parsedCode.value[i + 1])
 			end
-			-- print("Args:")
-			-- printTab(args)
-			returnVal = varFunc.callback(args)
+			if debugMode then
+				print("Call args:")
+				printTab(args)
+			end
+			local _returnVal, err, errDetail = varFunc.callback(args)
+			returnVal = _returnVal
+			if err then
+				if not child then
+					print("Error:", err, errDetail)
+					if debugMode then
+						print("Stack: " .. debug.traceback())
+					end
+				end
+				return nil, err, errDetail
+			end
 		else
 			if luispVariables[parsedCode.value[1].value] then
 				returnVal = luispVariables[parsedCode.value[1].value]
 			else
 				if printErrors and not child then
 					print("Error:", "VariableFunctionNotDefinedError", "Variable nor function \"" .. tostring(parsedCode.value[1].value) .. "\" not found!")
+					if debugMode then
+						print("Stack: " .. debug.traceback())
+					end
 				end
 				return nil, "VariableFunctionNotDefinedError", "Variable nor function \"" .. tostring(parsedCode.value[1].value) .. "\" not found!"
 			end
