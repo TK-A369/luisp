@@ -81,62 +81,6 @@ end
 
 local luispCoreFunctions = {
 	{
-		name = "print",
-		callback = function(args)
-			if debugMode then
-				print("Print args:")
-				printTab(args)
-			end
-			if #(args.value) ~= 1 then
-				return nil, "ArgsError", "Function print must have exactly 1 argument"
-			end
-			args = evalArgs(args, true)
-			if debugMode then
-				print("Print args (after eval):")
-				printTab(args)
-			end
-			if args.value[1].type == "atom" then
-				-- print("Printing atom: " .. args[1].value)
-				print(args.value[1].value)
-			elseif args.value[1].type == "quotelist" then
-				for k, v in ipairs(args.value[1].value) do
-					local res, err, errDetail = luispModule.exec({ type = "list", value = { { type = "atom", value = "print" }, v } }, true)
-					if err then
-						-- if printErrors then
-						-- 	print("Error: ", err, errDetail)
-						-- end
-						return nil, "" .. err, errDetail
-					end
-				end
-				-- elseif args.value[1].type == "list" then
-				-- 	if debugMode then
-				-- 		print("Printing list:")
-				-- 		printTab(args.value[1])
-				-- 	end
-				-- 	local res, err, errDetail = luispModule.exec(args.value[1], true)
-				-- 	if err then
-				-- 		-- if printErrors then
-				-- 		-- 	print("Error: ", err, errDetail)
-				-- 		-- end
-				-- 		return nil, "" .. err, errDetail
-				-- 	else
-				-- 		if debugMode then
-				-- 			print("Res:")
-				-- 			printTab(res)
-				-- 		end
-				-- 		_, err, errDetail = luispModule.exec({ type = "list", value = { { type = "atom", value = "print" }, res } }, true)
-				-- 		if err then
-				-- 			-- if printErrors then
-				-- 			-- 	print("Error: ", err, errDetail)
-				-- 			-- end
-				-- 			return nil, "" .. err, errDetail
-				-- 		end
-				-- 	end
-			end
-			return nil
-		end
-	},
-	{
 		name = "+",
 		callback = function(args)
 			if debugMode then
@@ -362,6 +306,65 @@ local luispCoreFunctions = {
 	},
 }
 
+local luispIOFunctions = {
+	{
+		name = "print",
+		callback = function(args)
+			if debugMode then
+				print("Print args:")
+				printTab(args)
+			end
+			if #(args.value) ~= 1 then
+				return nil, "ArgsError", "Function print must have exactly 1 argument"
+			end
+			args = evalArgs(args, true)
+			if debugMode then
+				print("Print args (after eval):")
+				printTab(args)
+			end
+			if args.value[1].type == "atom" then
+				-- print("Printing atom: " .. args[1].value)
+				print(args.value[1].value)
+			elseif args.value[1].type == "quotelist" then
+				for k, v in ipairs(args.value[1].value) do
+					local res, err, errDetail = luispModule.exec({ type = "list", value = { { type = "atom", value = "print" }, v } }, true)
+					if err then
+						-- if printErrors then
+						-- 	print("Error: ", err, errDetail)
+						-- end
+						return nil, "" .. err, errDetail
+					end
+				end
+				-- elseif args.value[1].type == "list" then
+				-- 	if debugMode then
+				-- 		print("Printing list:")
+				-- 		printTab(args.value[1])
+				-- 	end
+				-- 	local res, err, errDetail = luispModule.exec(args.value[1], true)
+				-- 	if err then
+				-- 		-- if printErrors then
+				-- 		-- 	print("Error: ", err, errDetail)
+				-- 		-- end
+				-- 		return nil, "" .. err, errDetail
+				-- 	else
+				-- 		if debugMode then
+				-- 			print("Res:")
+				-- 			printTab(res)
+				-- 		end
+				-- 		_, err, errDetail = luispModule.exec({ type = "list", value = { { type = "atom", value = "print" }, res } }, true)
+				-- 		if err then
+				-- 			-- if printErrors then
+				-- 			-- 	print("Error: ", err, errDetail)
+				-- 			-- end
+				-- 			return nil, "" .. err, errDetail
+				-- 		end
+				-- 	end
+			end
+			return nil
+		end
+	},
+}
+
 local luispFunctions = {}
 
 function luispModule.parse(code)
@@ -582,6 +585,12 @@ end
 
 function luispModule.registerCoreFunctions()
 	for k, v in pairs(luispCoreFunctions) do
+		table.insert(luispFunctions, v)
+	end
+end
+
+function luispModule.registerIOFunctions()
+	for k, v in pairs(luispIOFunctions) do
 		table.insert(luispFunctions, v)
 	end
 end

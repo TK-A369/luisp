@@ -3,6 +3,7 @@ local luisp = require("luisp")
 luisp.debugModeOff()
 luisp.printErrorsOn()
 luisp.registerCoreFunctions()
+luisp.registerIOFunctions()
 
 local function printTab(tab, depth)
 	if depth == nil then depth = 0 end
