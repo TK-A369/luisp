@@ -161,23 +161,25 @@ local luispCoreFunctions = {
 					else
 						sum = sum + v.value
 					end
-				elseif v.type == "list" then
-					local res, err, errDetail = luispModule.exec(v, true)
-					if err then
-						return nil, "" .. err, errDetail
-					else
-						if res.type == "atom" then
-							if tonumber(res.value) == nil then
-								return nil, "TypeError", "All arguments in + function should be number atoms or (callable) lists that return number atom"
-							else
-								sum = sum + res.value
-							end
-						else
-							return nil, "TypeError", "All arguments in + function should be number atoms or (callable) lists that return number atom"
-						end
-					end
+					-- elseif v.type == "list" then
+					-- 	local res, err, errDetail = luispModule.exec(v, true)
+					-- 	if err then
+					-- 		return nil, "" .. err, errDetail
+					-- 	else
+					-- 		if res.type == "atom" then
+					-- 			if tonumber(res.value) == nil then
+					-- 				return nil, "TypeError", "All arguments in + function should be number atoms or (callable) lists that return number atom"
+					-- 			else
+					-- 				sum = sum + res.value
+					-- 			end
+					-- 		else
+					-- 			return nil, "TypeError", "All arguments in + function should be number atoms or (callable) lists that return number atom"
+					-- 		end
+					-- 	end
 				else
-					print("Stack: " .. debug.traceback())
+					if debugMode then
+						print("Stack: " .. debug.traceback())
+					end
 					return nil, "TypeError", "All arguments in + function should be atoms or (callable) lists that return atom"
 				end
 			end
@@ -191,39 +193,49 @@ local luispCoreFunctions = {
 		name = "-",
 		callback = function(args)
 			-- print("Subtracting")
+			if debugMode then
+				print("Subtracting args: ")
+				printTab(args)
+			end
+			args = evalArgs(args, true)
+			if debugMode then
+				print("Subtracting args (after eval): ")
+				printTab(args)
+			end
+
 			local sub = 0
 			for k, v in pairs(args.value) do
 				if k == 1 then
 					if v.type == "atom" then
 						sub = v.value
-					elseif v.type == "list" then
-						local res, err, errDetail = luispModule.exec(v, true)
-						if err then
-							return nil, "" .. err, errDetail
-						else
-							if res.type == "atom" then
-								sub = res.value
-							else
-								return nil, "TypeError", "All arguments in + function should be atoms or (callable) lists that return atom"
-							end
-						end
+						-- elseif v.type == "list" then
+						-- 	local res, err, errDetail = luispModule.exec(v, true)
+						-- 	if err then
+						-- 		return nil, "" .. err, errDetail
+						-- 	else
+						-- 		if res.type == "atom" then
+						-- 			sub = res.value
+						-- 		else
+						-- 			return nil, "TypeError", "All arguments in + function should be atoms or (callable) lists that return atom"
+						-- 		end
+						-- 	end
 					else
 						return nil, "TypeError", "All arguments in + function should be atoms or (callable) lists that return atom"
 					end
 				else
 					if v.type == "atom" then
 						sub = sub - v.value
-					elseif v.type == "list" then
-						local res, err, errDetail = luispModule.exec(v, true)
-						if err then
-							return nil, err, errDetail
-						else
-							if res.type == "atom" then
-								sub = sub - res.value
-							else
-								return nil, "TypeError", "All arguments in + function should be atoms or (callable) lists that return atom"
-							end
-						end
+						-- elseif v.type == "list" then
+						-- 	local res, err, errDetail = luispModule.exec(v, true)
+						-- 	if err then
+						-- 		return nil, err, errDetail
+						-- 	else
+						-- 		if res.type == "atom" then
+						-- 			sub = sub - res.value
+						-- 		else
+						-- 			return nil, "TypeError", "All arguments in + function should be atoms or (callable) lists that return atom"
+						-- 		end
+						-- 	end
 					else
 						return nil, "TypeError", "All arguments in + function should be atoms or (callable) lists that return atom"
 					end
@@ -235,20 +247,30 @@ local luispCoreFunctions = {
 	{
 		name = "list",
 		callback = function(args)
+			if debugMode then
+				print("List args: ")
+				printTab(args)
+			end
+			args = evalArgs(args, true)
+			if debugMode then
+				print("List args (after eval): ")
+				printTab(args)
+			end
+
 			local result = { type = "quotelist", value = {} }
 			for k, v in pairs(args.value) do
-				if v.type == "atom" then
+				if v.type == "atom" or v.type == "quotelist" then
 					table.insert(result.value, v)
-				elseif v.type == "list" then
-					local res, err, errDetail = luispModule.exec(v, true)
-					if err then
-						-- if printErrors then
-						-- 	print("Error: ", err, errDetail)
-						-- end
-						return nil, "" .. err, errDetail
-					else
-						table.insert(result.value, res)
-					end
+					-- elseif v.type == "list" then
+					-- 	local res, err, errDetail = luispModule.exec(v, true)
+					-- 	if err then
+					-- 		-- if printErrors then
+					-- 		-- 	print("Error: ", err, errDetail)
+					-- 		-- end
+					-- 		return nil, "" .. err, errDetail
+					-- 	else
+					-- 		table.insert(result.value, res)
+					-- 	end
 				end
 			end
 			return result
@@ -257,18 +279,28 @@ local luispCoreFunctions = {
 	{
 		name = "set",
 		callback = function(args)
+			if debugMode then
+				print("Set args: ")
+				printTab(args)
+			end
+			args = evalArgs(args, true)
+			if debugMode then
+				print("Set args (after eval): ")
+				printTab(args)
+			end
+
 			if args.value[1].type == "atom" then
-				if args.value[2].type == "list" then
-					local res, err, errDetail = luispModule.exec(args.value[2], true)
-					if err then
-						return nil, "" .. err, errDetail
-					else
-						luispVariables[args.value[1].value] = res
-					end
-				else
-					local copy = deepcopy(args.value[2])
-					luispVariables[args.value[1].value] = copy
-				end
+				-- if args.value[2].type == "list" then
+				-- 	local res, err, errDetail = luispModule.exec(args.value[2], true)
+				-- 	if err then
+				-- 		return nil, "" .. err, errDetail
+				-- 	else
+				-- 		luispVariables[args.value[1].value] = res
+				-- 	end
+				-- else
+				local copy = deepcopy(args.value[2])
+				luispVariables[args.value[1].value] = copy
+				-- end
 			else
 				return nil, "TypeError", "Argument 1 should be atom"
 			end

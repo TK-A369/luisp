@@ -55,11 +55,17 @@ local code2 = [[
 
 local code3 = [[
 (set myvar1 7.5)
-(set myvar2 (+ 2 3))
-(set myvar3 (+ (myvar1) (myvar2)))
 (print (myvar1))
+(set myvar2 (+ 2 3))
 (print (myvar2))
+(set myvar3 (+ (myvar1) (myvar2)))
 (print (myvar3))
+(set myvar4 (- (myvar3) 2))
+(print (myvar4))
+(set myvar5 (- (myvar3) 0.5))
+(print (myvar5))
+(set myvar6 (- 21 1))
+(print (myvar6))
 ]]
 
 local code4 = [[
@@ -67,7 +73,7 @@ local code4 = [[
 (print (+ (+ 1 2) (+ 3 4)))
 ]]
 
-local parsedCode = luisp.parse(code1)
+local parsedCode = luisp.parse(code3)
 
 -- printTab(parsedCode)
 
