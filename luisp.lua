@@ -2,6 +2,7 @@ local luispModule = {}
 
 local debugMode = false
 local printErrors = false
+local yieldMode = false
 
 local luispVariables = {}
 
@@ -525,6 +526,10 @@ function luispModule.exec(parsedCode, child)
 					end
 				end
 			end
+
+			if yieldMode then
+				coroutine.yield()
+			end
 		end
 	else
 		--This is list of atoms
@@ -568,6 +573,10 @@ function luispModule.exec(parsedCode, child)
 				return nil, "VariableFunctionNotDefinedError", "Variable nor function \"" .. tostring(parsedCode.value[1].value) .. "\" not found!"
 			end
 		end
+
+		if yieldMode then
+			coroutine.yield()
+		end
 	end
 
 	return returnVal
@@ -587,6 +596,14 @@ end
 
 function luispModule.printErrorsOff()
 	printErrors = false
+end
+
+function luispModule.yieldModeOn()
+	yieldMode = true
+end
+
+function luispModule.yieldModeOff()
+	yieldMode = false
 end
 
 function luispModule.registerCoreFunctions()

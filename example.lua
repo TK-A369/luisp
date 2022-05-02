@@ -2,6 +2,7 @@ local luisp = require("luisp")
 
 luisp.debugModeOff()
 luisp.printErrorsOn()
+luisp.yieldModeOn()
 luisp.registerCoreFunctions()
 luisp.registerIOFunctions()
 
@@ -21,6 +22,12 @@ local function printTab(tab, depth)
 	else
 		print(tab)
 	end
+end
+
+local clock = os.clock
+function sleep(n) -- seconds
+	local t0 = clock()
+	while clock() - t0 <= n do end
 end
 
 luisp.registerFunctions({
@@ -79,12 +86,34 @@ local code5 = [[
 (if (myvar1) ((print abc)(print "This is true!")) ((print def)(print "This is false!")))
 ]]
 
-local parsedCode = luisp.parse(code5)
+local code6 = [[
+(print 1)
+(print 2)
+(print 3)
+(print 4)
+(print 5)
+]]
+
+parsedCode = luisp.parse(code6)
 
 -- printTab(parsedCode)
 
 -- print("\nExecuting: ")
-local result, err, errDetail = luisp.exec(parsedCode)
-if err then
-	print("User error: ", err, errDetail)
+local execCo = coroutine.create(function()
+	local result, err, errDetail = luisp.exec(parsedCode)
+	if err then
+		print("User error: ", err, errDetail)
+	end
+end)
+
+while true do
+	if coroutine.status(execCo) == "suspended" then
+		-- print("Resuming!")
+		coroutine.resume(execCo)
+	else
+		-- print("End!")
+		break
+	end
+	-- print("Tick!")
+	sleep(0.25)
 end
