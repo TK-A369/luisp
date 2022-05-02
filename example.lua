@@ -25,7 +25,7 @@ local function printTab(tab, depth)
 end
 
 local clock = os.clock
-function sleep(n) -- seconds
+local function sleep(n) -- seconds
 	local t0 = clock()
 	while clock() - t0 <= n do end
 end
@@ -94,7 +94,15 @@ local code6 = [[
 (print 5)
 ]]
 
-parsedCode = luisp.parse(code6)
+local code7 = [[
+(for i 1 10 1 (
+	(print (i))
+	(print (+ (i) 10))
+	(print "")
+))
+]]
+
+local parsedCode = luisp.parse(code7)
 
 -- printTab(parsedCode)
 
@@ -115,5 +123,5 @@ while true do
 		break
 	end
 	-- print("Tick!")
-	sleep(0.25)
+	sleep(0.05)
 end

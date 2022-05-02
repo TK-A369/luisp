@@ -296,13 +296,61 @@ local luispCoreFunctions = {
 					return ret, err, errDetail
 				end
 			else
-				return nil, "TypeError", "Argument 1 should be atom or (callable) clist that returns atom"
+				return nil, "TypeError", "Argument 1 should be atom or (callable) list that returns atom"
+			end
+		end
+	},
+	{
+		name = "for",
+		callback = function(args)
+			if debugMode then
+				print("for args: ")
+				printTab(args)
 			end
 
-			if debugMode then
-				print("Variable \"" .. args.value[1].value .. "\" after setting:")
-				printTab(luispVariables[args.value[1].value])
+			local evalRes, err, errDetail = evalArgs({ type = "list", value = { args.value[1], args.value[2], args.value[3], args.value[4] } }, true)
+			if err or not evalRes then
+				if debugMode then
+					print("for error!")
+				end
+				return nil, err, errDetail
 			end
+			if debugMode then
+				print("for args 1-4 (after eval): ")
+				printTab(evalRes)
+			end
+
+			local result = { type = "qoutelist", value = {} }
+
+			if evalRes.value[1].type == "atom" and evalRes.value[2].type == "atom" and evalRes.value[3].type == "atom" and evalRes.value[4].type == "atom" then
+				local forIterVar = evalRes.value[1].value
+				local forStart = evalRes.value[2].value
+				local forEnd = evalRes.value[3].value
+				local forInc = evalRes.value[4].value
+
+				if debugMode then
+					print("IterVar: " .. forIterVar)
+					print("Start: " .. forStart)
+					print("End: " .. forEnd)
+					print("Inc: " .. forInc)
+				end
+
+				for i = forStart, forEnd, forInc do
+					if debugMode then
+						print("for iteration " .. i)
+					end
+					luispModule.exec({ type = "list", value = { { type = "atom", value = "set" }, { type = "atom", value = forIterVar }, { type = "atom", value = i } } }, true)
+					local res, err, errDetail = luispModule.exec(args.value[5])
+					if err then
+						return nil, err, errDetail
+					end
+					table.insert(result.value, res)
+				end
+			else
+				return nil, "TypeError", "Arguments 1-4 should be atoms or (callable) lists that returns atom"
+			end
+
+			return result
 		end
 	},
 }
