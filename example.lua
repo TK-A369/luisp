@@ -73,7 +73,12 @@ local code4 = [[
 (print (+ (+ 1 2) (+ 3 4)))
 ]]
 
-local parsedCode = luisp.parse(code3)
+local code5 = [[
+(set myvar1 true)
+(if (myvar1) ((print abc)(print "This is true!")) ((print def)(print "This is false!")))
+]]
+
+local parsedCode = luisp.parse(code5)
 
 -- printTab(parsedCode)
 

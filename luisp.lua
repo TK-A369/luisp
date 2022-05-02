@@ -311,6 +311,55 @@ local luispCoreFunctions = {
 			end
 		end
 	},
+	{
+		name = "if",
+		callback = function(args)
+			if debugMode then
+				print("If args: ")
+				printTab(args)
+			end
+
+			local evalRes, err, errDetail = evalArgs({ type = "list", value = { args.value[1] } }, true)
+			if err or not evalRes then
+				if debugMode then
+					print("If error!")
+				end
+				return nil, err, errDetail
+			end
+			local arg1 = evalRes.value[1]
+			if debugMode then
+				print("Arg1 (after eval): ")
+				printTab(arg1)
+			end
+
+			if arg1.type == "atom" then
+				if tostring(arg1.value) == "0" or tostring(arg1.value) == "false" or tostring(arg1.value) == "" or tostring(arg1.value) == "nil" then
+					--False
+					if #(args.value) == 3 then
+						if debugMode then
+							print("Entering if's 2nd block")
+						end
+						local ret, err, errDetail = luispModule.exec(args.value[3], true)
+						return ret, err, errDetail
+					end
+				else
+					--True
+					if debugMode then
+						print("Entering if's 1st block")
+					end
+					local ret, err, errDetail = luispModule.exec(args.value[2], true)
+					return ret, err, errDetail
+				end
+			else
+				return nil, "TypeError", "Argument 1 should be atom or (callable) clist that returns atom"
+			end
+
+			if debugMode then
+				print("Variable \"" .. args.value[1].value .. "\" after setting:")
+				printTab(luispVariables[args.value[1].value])
+			end
+		end
+	},
 }
 
 local luispFunctions = {}
