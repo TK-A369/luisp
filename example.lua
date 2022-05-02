@@ -75,7 +75,7 @@ local code4 = [[
 ]]
 
 local code5 = [[
-(set myvar1 true)
+(set myvar1 (readline))
 (if (myvar1) ((print abc)(print "This is true!")) ((print def)(print "This is false!")))
 ]]
 

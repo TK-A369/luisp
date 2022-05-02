@@ -363,6 +363,12 @@ local luispIOFunctions = {
 			return nil
 		end
 	},
+	{
+		name = "readline",
+		callback = function(args)
+			return { type = "atom", value = io.read() }
+		end
+	},
 }
 
 local luispFunctions = {}
