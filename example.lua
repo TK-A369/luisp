@@ -139,8 +139,7 @@ local code10 = [[
 	(set tryCounter (+ (tryCounter) 1))
 	(if (== (currTry) (num)) (
 		(print "Congratulations! You won!")
-		(print "Attempts count:")
-		(print (tryCounter))
+		(print (strconcat "Attempts count: " (tryCounter)))
 		(set cont false)
 	) (
 		(if (> (currTry) (num)) (

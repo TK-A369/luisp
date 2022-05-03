@@ -269,7 +269,7 @@ local luispCoreFunctions = {
 					return { type = "atom", value = false }
 				end
 			else
-				return nil, "TypeError", "All arguments in == function should be number atoms or (callable) lists that return number atom"
+				return nil, "TypeError", "All arguments in > function should be number atoms or (callable) lists that return number atom"
 			end
 		end
 	},
@@ -294,8 +294,35 @@ local luispCoreFunctions = {
 					return { type = "atom", value = false }
 				end
 			else
-				return nil, "TypeError", "All arguments in == function should be number atoms or (callable) lists that return number atom"
+				return nil, "TypeError", "All arguments in < function should be number atoms or (callable) lists that return number atom"
 			end
+		end
+	},
+	{
+		name = "strconcat",
+		callback = function(args)
+			if debugMode then
+				print("Concat")
+				print("Concat args: ")
+				printTab(args)
+			end
+			args = evalArgs(args, true)
+			if debugMode then
+				print("Concat args (after eval): ")
+				printTab(args)
+			end
+
+			local result = ""
+
+			for k, v in pairs(args.value) do
+				if v.type == "atom" then
+					result = result .. tostring(v.value)
+				else
+					return nil, "TypeError", "All arguments in strconcat function should be atoms or (callable) lists that return atom"
+				end
+			end
+
+			return { type = "atom", value = result }
 		end
 	},
 	{
