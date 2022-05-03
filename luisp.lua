@@ -132,6 +132,98 @@ local luispCoreFunctions = {
 		end
 	},
 	{
+		name = "*",
+		callback = function(args)
+			if debugMode then
+				print("Multiplication args: ")
+				printTab(args)
+			end
+			args = evalArgs(args, true)
+			if debugMode then
+				print("Multiplication args (after eval): ")
+				printTab(args)
+			end
+			local mult = 1
+			for k, v in pairs(args.value) do
+				if debugMode then
+					print("Multiplication")
+					printTab(v)
+					print("Type: " .. v.type)
+				end
+				if v.type == "atom" then
+					if tonumber(v.value) == nil then
+						return nil, "TypeError", "All arguments in * function should be number atoms or (callable) lists that return number atom"
+					else
+						mult = mult * v.value
+					end
+				else
+					if debugMode then
+						print("Stack: " .. debug.traceback())
+					end
+					return nil, "TypeError", "All arguments in * function should be number atoms or (callable) lists that return number atom"
+				end
+			end
+			if debugMode then
+				print("Multiplication result: " .. mult)
+			end
+			return { type = "atom", value = mult }
+		end
+	},
+	{
+		name = "/",
+		callback = function(args)
+			if debugMode then
+				print("Dividing")
+				print("Dividing args: ")
+				printTab(args)
+			end
+			args = evalArgs(args, true)
+			if debugMode then
+				print("Dividing args (after eval): ")
+				printTab(args)
+			end
+
+			local div = 1
+			for k, v in pairs(args.value) do
+				if k == 1 then
+					if v.type == "atom" then
+						div = v.value
+					else
+						return nil, "TypeError", "All arguments in / function should be number atoms or (callable) lists that return number atom"
+					end
+				else
+					if v.type == "atom" then
+						div = div / v.value
+					else
+						return nil, "TypeError", "All arguments in / function should be number atoms or (callable) lists that return number atom"
+					end
+				end
+			end
+			return { type = "atom", value = div }
+		end
+	},
+	{
+		name = "^",
+		callback = function(args)
+			if debugMode then
+				print("Exponentiation")
+				print("Exponentiation args: ")
+				printTab(args)
+			end
+			args = evalArgs(args, true)
+			if debugMode then
+				print("Exponentiation args (after eval): ")
+				printTab(args)
+			end
+
+			if args.value[1].type == "atom" and args.value[2].type == "atom" and tonumber(args.value[1].value) ~= nil and tonumber(args.value[2].value) ~= nil then
+				return { type = "atom", value = args.value[1].value ^ args.value[2].value }
+			else
+				return nil, "TypeError", "All arguments in ^ function should be number atoms or (callable) lists that return number atom"
+			end
+		end
+	},
+	{
 		name = "list",
 		callback = function(args)
 			if debugMode then

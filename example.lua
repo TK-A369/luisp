@@ -98,6 +98,12 @@ local code7 = [[
 (for i 1 10 1 (
 	(print (i))
 	(print (+ (i) 10))
+	(print (* (i) 10))
+	(print (/ (i) 10))
+	(print (* 10 (/ (i) 10)))
+	(print (/ (* (i) 10) 10))
+	(print (^ (i) 2))
+	(print (^ 2 (i)))
 	(print "")
 ))
 ]]
@@ -108,7 +114,7 @@ local code8 = [[
 (print "\ta\n\tb\n\tc")
 ]]
 
-local parsedCode = luisp.parse(code8)
+local parsedCode = luisp.parse(code7)
 
 -- printTab(parsedCode)
 
@@ -129,5 +135,5 @@ while true do
 		break
 	end
 	-- print("Tick!")
-	sleep(0.05)
+	sleep(0.01)
 end
