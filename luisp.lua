@@ -336,7 +336,7 @@ function luispModule.parse(code)
 
 	for c in code:gmatch(".") do
 		if parserState.inString then
-			if c == "\"" then
+			if c == "\"" and parserState.lastChar ~= "\\" then
 				--Leaving string atom
 				parserState.inString = false
 				local currentList = parsedCode
@@ -346,6 +346,17 @@ function luispModule.parse(code)
 				table.insert(currentList.value, { type = "atom", value = parserState.stringBuf })
 				if debugMode then print("Leaving string atom: \"" .. parserState.stringBuf .. "\"") end
 				parserState.stringBuf = ""
+			elseif c == "\\" then
+			elseif parserState.lastChar == "\\" then
+				if c == "n" then
+					parserState.stringBuf = parserState.stringBuf .. "\n"
+				elseif c == "t" then
+					parserState.stringBuf = parserState.stringBuf .. "\t"
+				elseif c == "\"" then
+					parserState.stringBuf = parserState.stringBuf .. "\""
+				elseif c == "\'" then
+					parserState.stringBuf = parserState.stringBuf .. "\'"
+				end
 			else
 				parserState.stringBuf = parserState.stringBuf .. c
 			end

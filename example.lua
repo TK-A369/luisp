@@ -102,7 +102,13 @@ local code7 = [[
 ))
 ]]
 
-local parsedCode = luisp.parse(code7)
+local code8 = [[
+(print "abc")
+(print "Some text: \"Hello world!\"")
+(print "\ta\n\tb\n\tc")
+]]
+
+local parsedCode = luisp.parse(code8)
 
 -- printTab(parsedCode)
 
