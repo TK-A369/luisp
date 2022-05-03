@@ -224,6 +224,81 @@ local luispCoreFunctions = {
 		end
 	},
 	{
+		name = "==",
+		callback = function(args)
+			if debugMode then
+				print("Check equality")
+				print("Check equality args: ")
+				printTab(args)
+			end
+			args = evalArgs(args, true)
+			if debugMode then
+				print("Check equality args (after eval): ")
+				printTab(args)
+			end
+
+			if args.value[1].type == "atom" and args.value[2].type == "atom" and tonumber(args.value[1].value) ~= nil and tonumber(args.value[2].value) ~= nil then
+				if tonumber(args.value[1].value) == tonumber(args.value[2].value) then
+					return { type = "atom", value = true }
+				else
+					return { type = "atom", value = false }
+				end
+			else
+				return nil, "TypeError", "All arguments in == function should be number atoms or (callable) lists that return number atom"
+			end
+		end
+	},
+	{
+		name = ">",
+		callback = function(args)
+			if debugMode then
+				print("Check equality")
+				print("Check equality args: ")
+				printTab(args)
+			end
+			args = evalArgs(args, true)
+			if debugMode then
+				print("Check equality args (after eval): ")
+				printTab(args)
+			end
+
+			if args.value[1].type == "atom" and args.value[2].type == "atom" and tonumber(args.value[1].value) ~= nil and tonumber(args.value[2].value) ~= nil then
+				if tonumber(args.value[1].value) > tonumber(args.value[2].value) then
+					return { type = "atom", value = true }
+				else
+					return { type = "atom", value = false }
+				end
+			else
+				return nil, "TypeError", "All arguments in == function should be number atoms or (callable) lists that return number atom"
+			end
+		end
+	},
+	{
+		name = "<",
+		callback = function(args)
+			if debugMode then
+				print("Check equality")
+				print("Check equality args: ")
+				printTab(args)
+			end
+			args = evalArgs(args, true)
+			if debugMode then
+				print("Check equality args (after eval): ")
+				printTab(args)
+			end
+
+			if args.value[1].type == "atom" and args.value[2].type == "atom" and tonumber(args.value[1].value) ~= nil and tonumber(args.value[2].value) ~= nil then
+				if tonumber(args.value[1].value) < tonumber(args.value[2].value) then
+					return { type = "atom", value = true }
+				else
+					return { type = "atom", value = false }
+				end
+			else
+				return nil, "TypeError", "All arguments in == function should be number atoms or (callable) lists that return number atom"
+			end
+		end
+	},
+	{
 		name = "list",
 		callback = function(args)
 			if debugMode then

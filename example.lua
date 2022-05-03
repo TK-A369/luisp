@@ -123,7 +123,36 @@ local code9 = [[
 ))
 ]]
 
-local parsedCode = luisp.parse(code9)
+local code10 = [[
+(print "Welcome to Guess The Number game!")
+(print "Try to guess random number, using least possible number of attempts.")
+(print "Enter minimum:")
+(set minNum (readline))
+(print "Enter maximum:")
+(set maxNum (readline))
+(set cont true)
+(set tryCounter 0)
+(set num (random (minNum) (maxNum)))
+(while (cont) (
+	(print "Try to guess number:")
+	(set currTry (readline))
+	(set tryCounter (+ (tryCounter) 1))
+	(if (== (currTry) (num)) (
+		(print "Congratulations! You won!")
+		(print "Attempts count:")
+		(print (tryCounter))
+		(set cont false)
+	) (
+		(if (> (currTry) (num)) (
+			(print "Too big!")
+		) (
+			(print "Too small!")
+		))
+	))
+))
+]]
+
+local parsedCode = luisp.parse(code10)
 
 -- printTab(parsedCode)
 
