@@ -115,7 +115,15 @@ local code8 = [[
 (print "\ta\n\tb\n\tc")
 ]]
 
-local parsedCode = luisp.parse(code7)
+local code9 = [[
+(while ((set someRandomNumber (random 0 100)) (someRandomNumber)) (
+	(print "Test")
+	(print (someRandomNumber))
+	(print "")
+))
+]]
+
+local parsedCode = luisp.parse(code9)
 
 -- printTab(parsedCode)
 

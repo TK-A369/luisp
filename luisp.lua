@@ -369,6 +369,59 @@ local luispCoreFunctions = {
 		end
 	},
 	{
+		name = "while",
+		callback = function(args)
+			if debugMode then
+				print("while args: ")
+				printTab(args)
+			end
+
+			local result = { type = "qoutelist", value = {} }
+
+			while true do
+				if debugMode then
+					print("while iteration start")
+				end
+				local res1, err1, errDetail1 = evalArgs({ type = "list", value = { args.value[1] } }, true)
+				if debugMode then
+					print("while condition (after eval):")
+					printTab(res1)
+				end
+				if err1 then
+					if debugMode then
+						print("Error in while loop condition")
+					end
+					return nil, err1, errDetail1
+				end
+				if res1 == nil or res1.value[1] == nil or res1.value[1].value == nil then
+					if debugMode then
+						print("Breaking from while loop 1")
+					end
+					break
+				end
+				if tostring(res1.value[1].value) == "0" or tostring(res1.value[1].value) == "false" or tostring(res1.value[1].value) == "" then
+					if debugMode then
+						print("Breaking from while loop 2")
+					end
+					break
+				end
+				if debugMode then
+					print("while executing code")
+				end
+				local res2, err2, errDetail2 = luispModule.exec(args.value[2], true)
+				if err2 then
+					if debugMode then
+						print("Error in while block")
+					end
+					return nil, err2, errDetail2
+				end
+				table.insert(result.value, res2)
+			end
+
+			return result
+		end
+	},
+	{
 		name = "random",
 		callback = function(args)
 			if debugMode then
@@ -408,7 +461,7 @@ local luispIOFunctions = {
 			end
 			if args.value[1].type == "atom" then
 				if debugMode then
-					print("Printing atom: " .. args[1].value)
+					print("Printing atom: " .. args.value[1].value)
 				end
 				print(args.value[1].value)
 			elseif args.value[1].type == "quotelist" then
@@ -425,7 +478,8 @@ local luispIOFunctions = {
 	{
 		name = "readline",
 		callback = function(args)
-			return { type = "atom", value = io.read() }
+			local retVal = io.read()
+			return { type = "atom", value = retVal }
 		end
 	},
 }
@@ -559,7 +613,7 @@ function luispModule.exec(parsedCode, child)
 					local _returnVal, err, errDetail = varFunc.callback(args)
 					returnVal = _returnVal
 					if err then
-						if not child then
+						if not child and printErrors then
 							print("Error:", err, errDetail)
 							if debugMode then
 								print("Instruction number: " .. k)
