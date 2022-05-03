@@ -368,6 +368,26 @@ local luispCoreFunctions = {
 			return result
 		end
 	},
+	{
+		name = "random",
+		callback = function(args)
+			if debugMode then
+				print("random args: ")
+				printTab(args)
+			end
+			args = evalArgs(args, true)
+			if debugMode then
+				print("random args (after eval): ")
+				printTab(args)
+			end
+
+			if args.value[1].type == "atom" and args.value[2].type == "atom" and tonumber(args.value[1].value) ~= nil and tonumber(args.value[2].value) ~= nil then
+				return { type = "atom", value = math.random(args.value[1].value, args.value[2].value) }
+			else
+				return nil, "TypeError", "Arguments of function random should be atoms or (callable) lists that returns atom"
+			end
+		end
+	},
 }
 
 local luispIOFunctions = {

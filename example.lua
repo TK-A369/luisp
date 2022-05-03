@@ -104,6 +104,7 @@ local code7 = [[
 	(print (/ (* (i) 10) 10))
 	(print (^ (i) 2))
 	(print (^ 2 (i)))
+	(print (random 1 (i)))
 	(print "")
 ))
 ]]
